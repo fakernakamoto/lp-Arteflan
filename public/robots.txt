@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lp-arteflan.vercel.app/sitemap.xml
