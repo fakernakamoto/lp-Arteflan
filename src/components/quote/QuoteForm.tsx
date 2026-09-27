@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { MessageCircle } from "lucide-react";
 import {
   buildQuoteWhatsAppUrl,
@@ -8,14 +8,19 @@ import {
 } from "@/lib/quote";
 import { suppressQuoteOffer } from "@/lib/quote-offer";
 import { gaEvent } from "@/lib/analytics";
+import { reportQuoteConversion } from "@/lib/quote-conversion";
 
 export function QuoteForm({ source }: { source: string }) {
   const id = useId();
   const [errors, setErrors] = useState<QuoteErrors>({});
   const [whatsappUrl, setWhatsappUrl] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const submitted = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitted.current) return;
     const form = event.currentTarget;
     const fields = new FormData(form);
     const data = {
@@ -31,10 +36,18 @@ export function QuoteForm({ source }: { source: string }) {
       return;
     }
     const url = buildQuoteWhatsAppUrl(data);
-    setWhatsappUrl(url);
+    submitted.current = true;
+    setSubmitting(true);
     suppressQuoteOffer();
-    // A redirect is a contact attempt, not confirmation of a sent WhatsApp message.
-    gaEvent("quote_whatsapp_redirect", { source, segment: data.segment });
+    // This conversion means a validated quote form, not a message sent in WhatsApp.
+    await reportQuoteConversion();
+    try {
+      gaEvent("quote_whatsapp_redirect", { source, segment: data.segment });
+    } catch {
+      // Optional analytics must never prevent the WhatsApp handoff.
+    }
+    setWhatsappUrl(url);
+    setSubmitting(false);
     window.location.assign(url);
   }
 
@@ -47,6 +60,8 @@ export function QuoteForm({ source }: { source: string }) {
       onFocusCapture={suppressQuoteOffer}
       noValidate
       data-quote-form
+      data-quote-source={source}
+      aria-busy={submitting}
       className="space-y-5 text-left"
     >
       <div>
@@ -123,10 +138,15 @@ export function QuoteForm({ source }: { source: string }) {
       </div>
       <button
         type="submit"
+        disabled={submitting || !!whatsappUrl}
         className="whatsapp-cta flex min-h-13 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold"
       >
         <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-        Solicitar Cotação
+        {submitting
+          ? "Abrindo WhatsApp…"
+          : whatsappUrl
+            ? "Cotação encaminhada"
+            : "Solicitar Cotação"}
       </button>
       <p className="text-xs leading-relaxed text-muted-foreground">
         Todos os campos são obrigatórios. Ao continuar, o WhatsApp abrirá com seus dados na
