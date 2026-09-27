@@ -1,9 +1,9 @@
 const QUOTE_CONVERSION_DESTINATION = "AW-10900216944/WNpCCJzLsIgdEPC40M0o";
-const CONVERSION_TIMEOUT_MS = 2000;
+const CONVERSION_TIMEOUT_MS = 300;
 
 /** Wait for tag processing before navigation, without blocking leads if tracking fails. */
 export function reportQuoteConversion(): Promise<void> {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") {
+  if (typeof window === "undefined") {
     return Promise.resolve();
   }
 
@@ -18,13 +18,14 @@ export function reportQuoteConversion(): Promise<void> {
     // Independent fallback: blocked Google scripts cannot invoke event_callback.
     const timer = window.setTimeout(complete, CONVERSION_TIMEOUT_MS);
     try {
-      window.gtag!("event", "conversion", {
+      if (typeof window.gtag !== "function") return;
+      window.gtag("event", "conversion", {
         send_to: QUOTE_CONVERSION_DESTINATION,
         event_callback: complete,
         event_timeout: CONVERSION_TIMEOUT_MS,
       });
     } catch {
-      complete();
+      // Keep the independent 300ms delay even when a tracking script fails.
     }
   });
 }

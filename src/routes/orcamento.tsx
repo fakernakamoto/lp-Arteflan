@@ -6,11 +6,10 @@ import logo from "@/assets/arteflan-logo-v2.png.asset.json";
 import { QuoteForm } from "@/components/quote/QuoteForm";
 import { gaEvent } from "@/lib/analytics";
 import { getEntrySource } from "@/lib/quote-attribution";
-import { getArteflanWhatsAppNumber } from "@/lib/whatsapp";
 
 const TITLE = "Solicitar cotação | Arteflan";
 const DESCRIPTION =
-  "Solicite a tabela de atacado da Arteflan pelo WhatsApp. Informe seu nome, empresa e segmento.";
+  "Solicite a tabela de atacado da Arteflan pelo WhatsApp. Informe seu nome, telefone, empresa e segmento.";
 
 export const Route = createFileRoute("/orcamento")({
   component: OrcamentoPage,
@@ -87,12 +86,10 @@ function OrcamentoClient() {
           </Link>
 
           <a
-            href={`https://wa.me/${getArteflanWhatsAppNumber()}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#cotacao"
             className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Precisa de ajuda?
+            Solicitar cotação
           </a>
         </div>
       </header>
@@ -133,7 +130,11 @@ function OrcamentoClient() {
         </div>
 
         {/* Quote form */}
-        <div className="mt-6 w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-card md:mt-8 sm:p-8">
+        <div
+          id="cotacao"
+          tabIndex={-1}
+          className="mt-6 w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-card md:mt-8 sm:p-8"
+        >
           <QuoteForm source="quote_page" />
         </div>
       </main>

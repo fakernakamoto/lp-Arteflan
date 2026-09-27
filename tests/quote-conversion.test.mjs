@@ -30,7 +30,7 @@ test("sends the exact quote conversion and waits for the tag callback", async (t
   assert.equal(command, "event");
   assert.equal(event, "conversion");
   assert.equal(params.send_to, "AW-10900216944/WNpCCJzLsIgdEPC40M0o");
-  assert.equal(params.event_timeout, 2000);
+  assert.equal(params.event_timeout, 300);
   assert.deepEqual(Object.keys(params).sort(), ["event_callback", "event_timeout", "send_to"]);
   assert.equal(finished, false);
   params.event_callback();
@@ -38,7 +38,7 @@ test("sends the exact quote conversion and waits for the tag callback", async (t
   assert.equal(finished, true);
 });
 
-test("continues after two seconds if Google is blocked or never calls back", async (t) => {
+test("continues after 300ms if Google is blocked or never calls back", async (t) => {
   let callback;
   setup(t, (_command, _event, params) => {
     callback = params.event_callback;
@@ -47,7 +47,7 @@ test("continues after two seconds if Google is blocked or never calls back", asy
   const pending = reportQuoteConversion().then(() => {
     finished++;
   });
-  t.mock.timers.tick(1999);
+  t.mock.timers.tick(299);
   await Promise.resolve();
   assert.equal(finished, 0);
   t.mock.timers.tick(1);
@@ -60,14 +60,18 @@ test("continues after two seconds if Google is blocked or never calls back", asy
 
 test("does not block the lead if gtag is unavailable", async (t) => {
   setup(t, undefined);
-  await reportQuoteConversion();
+  const pending = reportQuoteConversion();
+  t.mock.timers.tick(300);
+  await pending;
 });
 
 test("does not block the lead if a third-party tag throws", async (t) => {
   setup(t, () => {
     throw new Error("Tracking unavailable");
   });
-  await reportQuoteConversion();
+  const pending = reportQuoteConversion();
+  t.mock.timers.tick(300);
+  await pending;
 });
 
 test("can be called during SSR without accessing window", async () => {

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Menu, X, MessageCircle } from "lucide-react";
 import { assetUrl } from "@/lib/asset-url";
 import { QuoteLink } from "@/components/navigation/QuoteLink";
-import { buildArteflanWhatsAppUrl } from "@/lib/whatsapp";
 import { suppressQuoteOffer } from "@/lib/quote-offer";
 import { gaEvent } from "@/lib/analytics";
 import logo from "@/assets/arteflan-logo-v2.png.asset.json";
@@ -84,13 +83,12 @@ export function Header() {
 
         <a
           id="cotacao-link-header"
-          href={buildArteflanWhatsAppUrl(
-            "Olá! Gostaria de receber a Tabela de Preços de Atacado da Arteflan para o meu negócio.",
-          )}
+          href="#cotacao"
           className="whatsapp-cta ml-auto inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:px-4 sm:text-sm lg:ml-0 lg:order-last"
           onClick={() => {
             suppressQuoteOffer();
-            gaEvent("click_whatsapp", { source: "header" });
+            setOpen(false);
+            gaEvent("click_cta", { source: "header_whatsapp", destination: "#cotacao" });
           }}
         >
           <MessageCircle className="h-4 w-4" aria-hidden="true" />

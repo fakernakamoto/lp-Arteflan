@@ -25,6 +25,7 @@ export function QuoteForm({ source }: { source: string }) {
     const fields = new FormData(form);
     const data = {
       name: String(fields.get("name") ?? ""),
+      phone: String(fields.get("phone") ?? ""),
       company: String(fields.get("company") ?? ""),
       segment: String(fields.get("segment") ?? ""),
     };
@@ -39,6 +40,15 @@ export function QuoteForm({ source }: { source: string }) {
     submitted.current = true;
     setSubmitting(true);
     suppressQuoteOffer();
+    // Reserve a tab during the user gesture; navigate only after tracking completes.
+    // If popups are blocked, use the current tab after the same tracking delay.
+    let whatsappWindow: Window | null = null;
+    try {
+      whatsappWindow = window.open("about:blank", "_blank");
+      if (whatsappWindow) whatsappWindow.opener = null;
+    } catch {
+      whatsappWindow = null;
+    }
     // This conversion means a validated quote form, not a message sent in WhatsApp.
     await reportQuoteConversion();
     try {
@@ -48,6 +58,14 @@ export function QuoteForm({ source }: { source: string }) {
     }
     setWhatsappUrl(url);
     setSubmitting(false);
+    if (whatsappWindow && !whatsappWindow.closed) {
+      try {
+        whatsappWindow.location.replace(url);
+        return;
+      } catch {
+        whatsappWindow.close();
+      }
+    }
     window.location.assign(url);
   }
 
@@ -83,6 +101,32 @@ export function QuoteForm({ source }: { source: string }) {
         {errors.name && (
           <p id={`${id}-name-error`} className="mt-2 text-sm text-destructive" role="alert">
             {errors.name}
+          </p>
+        )}
+      </div>
+      <div>
+        <label htmlFor={`${id}-phone`} className="text-sm font-semibold">
+          Telefone/WhatsApp <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id={`${id}-phone`}
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          required
+          maxLength={24}
+          placeholder="(67) 99234-8962"
+          className={fieldClass}
+          aria-invalid={!!errors.phone}
+          aria-describedby={errors.phone ? `${id}-phone-error` : `${id}-phone-hint`}
+        />
+        <p id={`${id}-phone-hint`} className="mt-2 text-xs text-muted-foreground">
+          Inclua o DDD. Você pode informar o código +55.
+        </p>
+        {errors.phone && (
+          <p id={`${id}-phone-error`} className="mt-2 text-sm text-destructive" role="alert">
+            {errors.phone}
           </p>
         )}
       </div>
@@ -149,13 +193,18 @@ export function QuoteForm({ source }: { source: string }) {
             : "Solicitar Cotação"}
       </button>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Todos os campos são obrigatórios. Ao continuar, o WhatsApp abrirá com seus dados na
-        mensagem. Toque em enviar para solicitar a tabela ao comercial.
+        Todos os campos são obrigatórios. Ao continuar, o WhatsApp abrirá em uma nova aba com seus
+        dados na mensagem. Toque em enviar para solicitar a tabela ao comercial.
       </p>
       {whatsappUrl && (
         <p role="status" className="text-sm">
           Se o WhatsApp não abriu,{" "}
-          <a href={whatsappUrl} className="font-semibold underline">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold underline"
+          >
             continue sua cotação aqui
           </a>
           .
